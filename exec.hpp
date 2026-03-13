@@ -32,7 +32,8 @@ namespace procebo::exec {
 
             if (env.size()) execve(path.c_str(), raw_argv.data(), raw_env.data());
             else execve(path.c_str(), raw_argv.data(), environ);
-            _exit(errno);
+            
+            std::exit(errno);
         }
 
         return task_proc;
