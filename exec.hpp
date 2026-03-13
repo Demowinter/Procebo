@@ -24,15 +24,15 @@ namespace procebo::exec {
 
             pipe::descriptor task_pipe = proc::getpipe(task_proc);
 
-            dup2(task_pipe.rfd, STDIN_FILENO);
-            dup2(task_pipe.wfd, STDOUT_FILENO);
-            dup2(task_pipe.wfd, STDERR_FILENO);
+            ::dup2(task_pipe.rfd, STDIN_FILENO);
+            ::dup2(task_pipe.wfd, STDOUT_FILENO);
+            ::dup2(task_pipe.wfd, STDERR_FILENO);
 
             procebo::pipe::close(task_pipe);
 
-            if (env.size()) execve(path.c_str(), raw_argv.data(), raw_env.data());
-            else execve(path.c_str(), raw_argv.data(), environ);
-            
+            if (env.size()) ::execve(path.c_str(), raw_argv.data(), raw_env.data());
+            else ::execve(path.c_str(), raw_argv.data(), environ);
+
             std::exit(errno);
         }
 
