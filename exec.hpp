@@ -7,7 +7,7 @@
 extern char** environ;
 
 namespace procebo::exec {
-    proc::descriptor spawn(const std::string& path, const std::vector<std::string>& argv = {}, const std::vector<std::string>& env = {}) {
+    inline proc::descriptor spawn(const std::string& path, const std::vector<std::string>& argv = {}, const std::vector<std::string>& env = {}) {
         proc::descriptor task_proc = proc::fork();
 
         if (proc::is_child(task_proc)) {

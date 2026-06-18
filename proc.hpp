@@ -30,14 +30,14 @@ namespace procebo::proc {
             uint64_t fingerprint;
         };
 
-        std::unordered_map<int32_t, proc_entry> proc_table;
-        std::mutex proc_table_mutex;
+        inline std::unordered_map<int32_t, proc_entry> proc_table;
+        inline std::mutex proc_table_mutex;
 
-        std::unique_lock<std::mutex> lock_table() {
+        inline std::unique_lock<std::mutex> lock_table() {
             return std::unique_lock(proc_table_mutex);
         }
 
-        proc_entry& get_entry(descriptor desc) {
+        inline proc_entry& get_entry(descriptor desc) {
             auto it = proc_table.find(desc.id);
 
             if (it == proc_table.end()) throw std::runtime_error("Invalid process descriptor");
@@ -46,7 +46,7 @@ namespace procebo::proc {
             return it->second;
         }
 
-        void update_state(descriptor desc) {
+        inline void update_state(descriptor desc) {
             auto lockt = lock_table();
             auto& entry = get_entry(desc);
 
@@ -59,7 +59,7 @@ namespace procebo::proc {
         }
 
         namespace utils {
-            std::optional<uint32_t> find_unused_descriptor() {
+            inline std::optional<uint32_t> find_unused_descriptor() {
                 auto lockt = lock_table();
 
                 for (uint32_t i = 0; i < std::numeric_limits<uint32_t>::max(); i++) 
@@ -68,7 +68,7 @@ namespace procebo::proc {
                 return std::nullopt;
             }
 
-            uint64_t gen_fingerprint() {
+            inline uint64_t gen_fingerprint() {
                 static std::random_device rd;
                 static std::mt19937_64 mt(rd());
 
@@ -81,7 +81,7 @@ namespace procebo::proc {
     using safe_entry = std::tuple<std::unique_lock<std::mutex>, std::unique_lock<std::mutex>, runtime::proc_entry*>;
 
     
-    descriptor fork() {
+    inline descriptor fork() {
         auto desc_opt = runtime::utils::find_unused_descriptor();
         
         if (!desc_opt.has_value()) throw std::runtime_error("Fork error!");
@@ -127,21 +127,21 @@ namespace procebo::proc {
         return {descid, fingerprint};
     }
 
-    int32_t getprocid(descriptor desc) {
+    inline int32_t getprocid(descriptor desc) {
         auto lockt = runtime::lock_table();
         auto& entry = runtime::get_entry(desc);
 
         return entry.procid;
     }
 
-    bool is_child(descriptor desc) {
+    inline bool is_child(descriptor desc) {
         auto lockt = runtime::lock_table();
         auto& entry = runtime::get_entry(desc);
 
         return entry.child;
     }
 
-    bool is_alive(descriptor desc) {
+    inline bool is_alive(descriptor desc) {
         runtime::update_state(desc);
 
         auto lockt = runtime::lock_table();
@@ -150,7 +150,7 @@ namespace procebo::proc {
         return entry.alive;
     }
 
-    std::optional<int32_t> exit_code(descriptor desc) {
+    inline std::optional<int32_t> exit_code(descriptor desc) {
         runtime::update_state(desc);
 
         auto lockt = runtime::lock_table();
@@ -161,29 +161,29 @@ namespace procebo::proc {
         return entry.ecode;
     }
 
-    pipe::descriptor getpipe(descriptor desc) {
+    inline pipe::descriptor getpipe(descriptor desc) {
         auto lockt = runtime::lock_table();
         auto& entry = runtime::get_entry(desc);
 
         return entry.pipe;
     }
     
-    void wait(descriptor desc, int options = WEXITED | WNOWAIT) {
+    inline void wait(descriptor desc, int options = WEXITED | WNOWAIT) {
         if (::waitid(P_PID, getprocid(desc), nullptr, options) < 0) throw std::runtime_error("Wait error!");
     }
 
-    void terminate(descriptor desc) {
+    inline void terminate(descriptor desc) {
         if (::kill(getprocid(desc), SIGTERM) < 0) throw std::runtime_error("Terminate error!");
     }
 
-    void kill(descriptor desc) {
+    inline void kill(descriptor desc) {
         auto lockt = runtime::lock_table();
         auto& entry = runtime::get_entry(desc);
 
         if (::kill(entry.procid, SIGKILL) < 0) throw std::runtime_error("Kill error!");
     }
 
-    void cleanup(descriptor desc) {
+    inline void cleanup(descriptor desc) {
         if (is_alive(desc)) wait(desc, WEXITED);
 
         auto lockt = runtime::lock_table();
